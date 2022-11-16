@@ -1,24 +1,30 @@
 import unittest
-from main import ReCardParser
+from main import ReCardParser, Card, SQLAlchemyDatabase
+
+def init_basic_card(self):
+    self.parser = ReCardParser()
+
+    self.title = 'template_card'
+    self.content = ''' 
+    [[Hello_World-123]]
+
+    [[World-Hello_321]]
+
+    Q1{{Hello123@\-/<>,.&[{}()]=*+#[[Hello_jezus]]}}
+
+    Q2{{   What is the size of pain?}}
+    $1 + 1 = 2$
+
+
+    how are u doing today mister swap bro
+    #biology
+    '''
+    self.card = Card(self.title, self.content)
+    self.card.set_parsed_content(self.parser.parse_card(self.card))
 
 class ReCardParserTester(unittest.TestCase):
     def setUp(self):
-        self.parser = ReCardParser()
-
-        self.content = ''' 
-        [[Hello_World-123]]
-
-        [[World-Hello_321]]
-
-        Q1{{Hello123@\-/<>,.&[{}()]=*+#[[Hello_jezus]]}}
-
-        Q2{{   What is the size of pain?}}
-        $1 + 1 = 2$
-
-
-        how are u doing today mister swap bro
-        #biology
-        '''
+        init_basic_card(self)
 
     def test_letter_title(self):
         title = 'helloworld'
@@ -50,25 +56,33 @@ class ReCardParserTester(unittest.TestCase):
             self.assertEqual(True, True)
 
     def test_links(self):
-        card = self.parser.parse_card(self.content)
+        card = self.parser.parse_card(self.card)
         self.assertEqual(card['links'][0], '[[Hello_World-123]]')
         self.assertEqual(card['links'][1], '[[World-Hello_321]]')
         self.assertEqual(card['links'][2], '[[Hello_jezus]]')
 
     def test_questions(self):
-        card = self.parser.parse_card(self.content)
+        card = self.parser.parse_card(self.card)
         self.assertEqual(card['questions'][0], 'Q1{{Hello123@\-/<>,.&[{}()]=*+#[[Hello_jezus]]}}')
         self.assertEqual(card['questions'][1], 'Q2{{   What is the size of pain?}}')
 
     def test_tags(self):
-        card = self.parser.parse_card(self.content)
+        card = self.parser.parse_card(self.card)
         self.assertEqual(card['tags'][0], '#biology')
 
     def test_latex(self):
-        card = self.parser.parse_card(self.content)
+        card = self.parser.parse_card(self.card)
         self.assertEqual(card['latex'][0], '$1 + 1 = 2$')
 
+class SQLAlchemyDatabaseTester(unittest.TestCase):
+    def setUp(self):
+        init_basic_card(self)
+        self.database = SQLAlchemyDatabase()
 
+    def test_store_card(self):
+        self.database.store_card(self.card)
+
+    
 
 if __name__=='__main__':
     unittest.main()
