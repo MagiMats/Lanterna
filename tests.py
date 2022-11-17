@@ -68,7 +68,7 @@ class ReCardParserTester(unittest.TestCase):
 
     def test_tags(self):
         card = self.parser.parse_card(self.card)
-        self.assertEqual(card['tags'][0], '#biology')
+        self.assertEqual(card['tags'][0], 'biology')
 
     def test_latex(self):
         card = self.parser.parse_card(self.card)

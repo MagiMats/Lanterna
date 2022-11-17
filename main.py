@@ -191,9 +191,13 @@ class ReCardParser(CardParserInteractor):
 
         return links
 
-    def strip_chars(self, strip_list, begin, end):
+    def strip_chars(self, strip_list, begin, end=0):
         for index, item in enumerate(strip_list):
-            strip_item = item[begin:-end]
+            if end == 0:
+                strip_item = item[begin:]
+            else:
+                strip_item = item[begin: -end]
+            
             strip_list[index] = strip_item
 
         return strip_list
@@ -217,7 +221,11 @@ class ReCardParser(CardParserInteractor):
     def _parse_tags(self, content):
         tag_pat = re.compile('#\w+')
 
-        return re.findall(tag_pat, content)
+        tags = re.findall(tag_pat, content)
+
+        tags = self.strip_chars(tags, 1)
+
+        return tags
 
 class AlgorithmCalculator(RevCalcInteractor):
     def calculate_next_review():
