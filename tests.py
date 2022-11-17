@@ -80,7 +80,10 @@ class SQLAlchemyDatabaseTester(unittest.TestCase):
         self.database = SQLAlchemyDatabase()
 
     def test_store_card(self):
-        self.database.store_card(self.card)
+        self.database.store_card(self.card, False)
+
+    def test_return_all_cards(self):
+        self.database.get_all_cards()
 
     
 

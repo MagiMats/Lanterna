@@ -208,59 +208,61 @@ class AlgorithmCalculator(RevCalcInteractor):
 class SQLAlchemyDatabase(DatabaseInteractor):
     def __init__(self):
         self.base = declarative_base()
-        self.engine = create_engine('sqlite:////tmp/test.db')
+        self.engine = create_engine('sqlite:////tmp/cards.db')
         self.session = scoped_session(sessionmaker(autocommit=False,
             autoflush=False,
             bind=self.engine))
 
-        self.base.query = self.session.query_property()
-
     class DataCard(declarative_base()):
         __tablename__ = 'card'
 
-        card_id = Column(Integer, primary_key = True)
-        parsed_card_id = Column(Integer, ForeignKey("parsed_card.parsed_card_id"))
-        title = Column(String)
-        content = Column(String)
+        card_id     = Column(Integer, primary_key = True)
+        title       = Column(String)
+        content     = Column(String)
 
-    class ParsedCard(declarative_base()):
-        __tablename__= 'parsed_card'
-        parsed_card_id = Column(Integer, primary_key=True)
-        links = Column(String)
-        questions = Column(String)
-        latex = Column(String)
-        tags = Column(String)
-
+        links       = Column(String)
+        questions   = Column(String)
+        latex       = Column(String)
+        tags        = Column(String)
 
     def get_all_cards(self):
-        print(self.base.query.all())
+        cards = self.session.query(self.DataCard).all()
+
+        for card in cards:
+            print(card.title)
+
 
     def get_card(self, card_id):
         pass
 
-    def store_card(self, card):
+    def store_card(self, card, commit=True):
         parsed_card_content = card.get_parsed_content()
 
-        for item in parsed_card_content:
-
-            parsed_card_content[item] = json.dumps(parsed_card_content[item])
+        parsed_card_content = self.jsonify_card(parsed_card_content)
     
-        unwrapped_card = self.unwrap_card(parsed_card_content)
+        unwrapped_parsed_card = self.unwrap_parsed_card(card, parsed_card_content)
 
-        self.session.add(unwrapped_card)
-        self.session.flush()
+        if commit == True:
+            self.session.add(unwrapped_parsed_card)
+            self.session.flush()
 
-    def unwrap_card(self, parsed_card):
-        unwrapped_card = self.ParsedCard(
-            links = parsed_card['links'], 
-            questions = parsed_card['questions'], 
-            latex = parsed_card['latex'], 
-            tags = parsed_card['tags'], 
+    def jsonify_card(self, parsed_card_content):
+        for item in parsed_card_content:
+            parsed_card_content[item] = json.dumps(parsed_card_content[item])
+
+        return parsed_card_content
+
+    def unwrap_parsed_card(self,card, parsed_card_content):
+        unwrapped_card = self.DataCard(
+            title       = card.get_title(),
+            content     = card.get_content(),
+            links       = parsed_card_content['links'], 
+            questions   = parsed_card_content['questions'], 
+            latex       = parsed_card_content['latex'], 
+            tags        = parsed_card_content['tags'], 
         )
 
         return unwrapped_card
-
-
 
     def update_card(self, card_id, new_card):
         pass
@@ -271,13 +273,16 @@ class SQLAlchemyDatabase(DatabaseInteractor):
     def init_db(self):
         self.base.metadata.create_all(bind=self.engine)
 
+    def reset_database(self):
+        self.base.metadata.drop_all(self.engine)
+
 if __name__=='__main__':
 
-
-    card_parser = ReCardParser()  
-    card_rev_calc = AlgorithmCalculator()
-    card_database = SQLAlchemyDatabase()
+    card_parser     = ReCardParser()  
+    card_rev_calc   = AlgorithmCalculator()
+    card_database   = SQLAlchemyDatabase()
+    
     card_database.init_db()
-    interactor = WebInteractor(card_parser, card_rev_calc, card_database)
+    interactor      = WebInteractor(card_parser, card_rev_calc, card_database)
 
     interactor.init_router()
