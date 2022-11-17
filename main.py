@@ -187,13 +187,13 @@ class ReCardParser(CardParserInteractor):
         link_pat = re.compile('\[\[[a-zA-Z1-9\-\_]*\]\]')
         links = re.findall(link_pat, content)
 
-        links = self.strip_chars(links, 2)
+        links = self.strip_chars(links, 2, 2)
 
         return links
 
-    def strip_chars(self, strip_list, strip_chars):
+    def strip_chars(self, strip_list, begin, end):
         for index, item in enumerate(strip_list):
-            strip_item = item[strip_chars:-strip_chars]
+            strip_item = item[begin:-end]
             strip_list[index] = strip_item
 
         return strip_list
@@ -201,7 +201,11 @@ class ReCardParser(CardParserInteractor):
     def _parse_question(self, content):
         q_pat = re.compile('Q\d*\{\{.*\}\}')
 
-        return re.findall(q_pat, content)
+        questions = re.findall(q_pat, content)
+
+        #TODO Make it so we can parse more than 9 questions
+        questions = self.strip_chars(questions, 4,2)
+        return questions
 
     def _parse_latex(self, content):
         latex_pat = re.compile('\$.*\$')

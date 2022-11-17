@@ -63,8 +63,8 @@ class ReCardParserTester(unittest.TestCase):
 
     def test_questions(self):
         card = self.parser.parse_card(self.card)
-        self.assertEqual(card['questions'][0], 'Q1{{Hello123@\-/<>,.&[{}()]=*+#[[Hello_jezus]]}}')
-        self.assertEqual(card['questions'][1], 'Q2{{   What is the size of pain?}}')
+        self.assertEqual(card['questions'][0], 'Hello123@\-/<>,.&[{}()]=*+#[[Hello_jezus]]')
+        self.assertEqual(card['questions'][1], '   What is the size of pain?')
 
     def test_tags(self):
         card = self.parser.parse_card(self.card)
