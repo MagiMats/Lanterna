@@ -86,6 +86,9 @@ class SQLAlchemyDatabaseTester(unittest.TestCase):
     def test_return_all_cards(self):
         self.database.get_all_cards()
 
+    def test_single_card(self):
+        self.database.get_card(1)
+
     
 
 if __name__=='__main__':

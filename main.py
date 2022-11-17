@@ -146,6 +146,7 @@ class CardInteractor():
 
     def get_all_cards(self):
         all_cards = self.database.get_all_cards()
+
         # TODO make a specifier so we can choose 
         # TODO which contents we get for a specific purpose
 
@@ -225,37 +226,40 @@ class SQLAlchemyDatabase(DatabaseInteractor):
         latex       = Column(String)
         tags        = Column(String)
 
+    def update_database(self):
+        self.session.commit()
+
     def get_all_cards(self):
         cards = self.session.query(self.DataCard).all()
 
-        for card in cards:
-            print('title: ' + card.title)
-
+        return cards
 
     def get_card(self, card_id):
-        pass
+        card = self.session.query(self.DataCard).get(card_id)
+
+        return card
 
     def store_card(self, card):
         parsed_card_content = card.get_parsed_content()
 
-        parsed_card_content = self.jsonify_card(parsed_card_content)
+        parsed_card_content = self.jsonify_parsed_content(parsed_card_content)
     
         unwrapped_parsed_card = self.unwrap_parsed_card(card, parsed_card_content)
 
-    
         self.session.add(unwrapped_parsed_card)
+
+        #only adds the card temporarily till we commit
         self.session.flush()
 
-    def update_database(self):
-        self.session.commit()
-
-    def jsonify_card(self, parsed_card_content):
+    #Parse python dictionaries to a json format
+    def jsonify_parsed_content(self, parsed_card_content):
         for item in parsed_card_content:
             parsed_card_content[item] = json.dumps(parsed_card_content[item])
 
         return parsed_card_content
 
     def unwrap_parsed_card(self,card, parsed_card_content):
+
         unwrapped_card = self.DataCard(
             title       = card.get_title(),
             content     = card.get_content(),
@@ -271,7 +275,7 @@ class SQLAlchemyDatabase(DatabaseInteractor):
         pass
 
     def remove_card(self, card_id):
-        pass
+        self.session.query(self.DataCard).get(card_id).delete()
     
     def init_db(self):
         self.base.metadata.create_all(bind=self.engine)
