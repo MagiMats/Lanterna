@@ -231,8 +231,25 @@ class SQLAlchemyDatabase(DatabaseInteractor):
 
     def get_all_cards(self):
         cards = self.session.query(self.DataCard).all()
+        cards = self.serialize_cards(cards)
 
         return cards
+
+    def serialize_cards(self, cards):
+        serialized_cards = {}
+        serialized_card = {}
+
+        for card in cards:
+            serialized_card['title'] = card.title
+            serialized_card['content'] = card.content
+            serialized_card['links'] = card.links
+            serialized_card['questions'] = card.questions
+            serialized_card['latex'] = card.latex
+            serialized_card['tags'] = card.tags
+
+            serialized_cards[card.card_id] = serialized_card
+
+        return serialized_cards
 
     def get_card(self, card_id):
         card = self.session.query(self.DataCard).get(card_id)
