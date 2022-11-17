@@ -209,8 +209,10 @@ class ReCardParser(CardParserInteractor):
 
     def _parse_latex(self, content):
         latex_pat = re.compile('\$.*\$')
+        latex = re.findall(latex_pat, content)
 
-        return re.findall(latex_pat, content)
+        latex = self.strip_chars(latex, 1, 1)
+        return latex
 
     def _parse_tags(self, content):
         tag_pat = re.compile('#\w+')

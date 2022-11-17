@@ -72,7 +72,7 @@ class ReCardParserTester(unittest.TestCase):
 
     def test_latex(self):
         card = self.parser.parse_card(self.card)
-        self.assertEqual(card['latex'][0], '$1 + 1 = 2$')
+        self.assertEqual(card['latex'][0], '1 + 1 = 2')
 
 class SQLAlchemyDatabaseTester(unittest.TestCase):
     def setUp(self):
