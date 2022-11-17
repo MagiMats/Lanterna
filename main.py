@@ -229,22 +229,25 @@ class SQLAlchemyDatabase(DatabaseInteractor):
         cards = self.session.query(self.DataCard).all()
 
         for card in cards:
-            print(card.title)
+            print('title: ' + card.title)
 
 
     def get_card(self, card_id):
         pass
 
-    def store_card(self, card, commit=True):
+    def store_card(self, card):
         parsed_card_content = card.get_parsed_content()
 
         parsed_card_content = self.jsonify_card(parsed_card_content)
     
         unwrapped_parsed_card = self.unwrap_parsed_card(card, parsed_card_content)
 
-        if commit == True:
-            self.session.add(unwrapped_parsed_card)
-            self.session.flush()
+    
+        self.session.add(unwrapped_parsed_card)
+        self.session.flush()
+
+    def update_database(self):
+        self.session.commit()
 
     def jsonify_card(self, parsed_card_content):
         for item in parsed_card_content:
@@ -283,6 +286,6 @@ if __name__=='__main__':
     card_database   = SQLAlchemyDatabase()
     
     card_database.init_db()
-    interactor      = WebInteractor(card_parser, card_rev_calc, card_database)
+    interactor = WebInteractor(card_parser, card_rev_calc, card_database)
 
     interactor.init_router()
