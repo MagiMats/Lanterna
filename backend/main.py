@@ -265,12 +265,12 @@ class SQLAlchemyDatabase(DatabaseInteractor):
         serialized_card = {}
 
         for card in cards:
-            serialized_card['title'] = card.title
-            serialized_card['content'] = card.content
-            serialized_card['links'] = card.links
-            serialized_card['questions'] = card.questions
-            serialized_card['latex'] = card.latex
-            serialized_card['tags'] = card.tags
+            serialized_card['title']        = card.title
+            serialized_card['content']      = card.content
+            serialized_card['links']        = card.links
+            serialized_card['questions']    = card.questions
+            serialized_card['latex']        = card.latex
+            serialized_card['tags']         = card.tags
 
             serialized_cards[card.card_id] = serialized_card
 
