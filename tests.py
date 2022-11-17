@@ -57,9 +57,9 @@ class ReCardParserTester(unittest.TestCase):
 
     def test_links(self):
         card = self.parser.parse_card(self.card)
-        self.assertEqual(card['links'][0], '[[Hello_World-123]]')
-        self.assertEqual(card['links'][1], '[[World-Hello_321]]')
-        self.assertEqual(card['links'][2], '[[Hello_jezus]]')
+        self.assertEqual(card['links'][0], 'Hello_World-123')
+        self.assertEqual(card['links'][1], 'World-Hello_321')
+        self.assertEqual(card['links'][2], 'Hello_jezus')
 
     def test_questions(self):
         card = self.parser.parse_card(self.card)

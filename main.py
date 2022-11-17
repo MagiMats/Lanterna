@@ -185,7 +185,18 @@ class ReCardParser(CardParserInteractor):
     def _parse_links(self, content):
         # Matches a title surrounded by 2 hooks
         link_pat = re.compile('\[\[[a-zA-Z1-9\-\_]*\]\]')
-        return re.findall(link_pat, content)
+        links = re.findall(link_pat, content)
+
+        links = self.strip_chars(links, 2)
+
+        return links
+
+    def strip_chars(self, strip_list, strip_chars):
+        for index, item in enumerate(strip_list):
+            strip_item = item[strip_chars:-strip_chars]
+            strip_list[index] = strip_item
+
+        return strip_list
 
     def _parse_question(self, content):
         q_pat = re.compile('Q\d*\{\{.*\}\}')
