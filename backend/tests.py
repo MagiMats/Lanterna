@@ -78,10 +78,9 @@ class SQLAlchemyDatabaseTester(unittest.TestCase):
     def setUp(self):
         init_basic_card(self)
         self.database = SQLAlchemyDatabase()
-        self.database.init_db()
 
     def test_store_card(self):
-        self.database.update_database()
+        self.database.store_card(self.card)
 
     def test_return_all_cards(self):
         self.database.get_all_cards()

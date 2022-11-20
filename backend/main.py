@@ -1,6 +1,7 @@
 from uuid import uuid4
 from abc import ABC,abstractmethod
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 from sqlalchemy import (
     Column,
@@ -14,7 +15,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 import re, json
-
 
 class Card():
     def __init__(self, title, content):
@@ -161,17 +161,28 @@ class WebInteractor(CardInteractor):
     def init_router(self):
         self.app = Flask(__name__)
         app = self.app
+        CORS(app, resources={r"/*":{'origins':"*"}})
 
-        @app.route('/')
-        def home():
+        @app.route('/cards', methods=["GET", "POST"])
+        def cards():
             response_object = {'status': 'succes'}
 
-            all_cards = self.get_all_cards()
-            response_object['CARDS'] = all_cards
+            if request.method == 'POST':
+                post_data = request.get_json()
+
+                self.create_card(
+                    post_data.get('title'),
+                    post_data.get('content'),
+                )
+
+            else:
+                all_cards = self.get_all_cards()
+                response_object['cards'] = all_cards
 
             return jsonify(response_object)
 
         app.run(debug=True)
+        print('error')
 
 class ReCardParser(CardParserInteractor):
     def validate_title(self, title):

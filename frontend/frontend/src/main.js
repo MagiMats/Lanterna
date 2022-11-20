@@ -1,16 +1,11 @@
-import Vue from "vue";
-import App from "./App.vue";
-import router from "./router";
-// install bootstrap first
-import 'bootstrap/dist/css/bootstrap.css';
-// Importing the bootstrapvue library
-import BootstrapVue from 'bootstrap-vue';
+import Vue from 'vue';
+import App from './App.vue';
 
+import router from './router';
 
-Vue.config.productionTip = false;
-Vue.use(BootstrapVue)
+Vue.config.productionTip = false
 
 new Vue({
   router,
-  render: (h) => h(App),
-}).$mount("#app");
+  render: h => h(App),
+}).$mount('#app')
