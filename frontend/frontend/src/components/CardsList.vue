@@ -2,6 +2,7 @@
 <div class="jumbotron vertical-center">
   <div class="container">
     
+       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/sketchy/bootstrap.min.css" integrity="sha384-RxqHG2ilm4r6aFRpGmBbGTjsqwfqHOKy1ArsMhHusnRO47jcGqpIQqlQK/kmGy9R" crossorigin="anonymous">
     <div class="row">
       <div class="col-sm-12 ">
        <h1>Card List</h1>
@@ -109,7 +110,7 @@
 
         initForm() {
           this.addCardForm.title = '';
-          this.addCardForm.genre = '';
+          this.addCardForm.content = '';
         }, 
 
         onSubmit(e) {
@@ -118,9 +119,10 @@
 
           const payload = {
             title: this.addCardForm.title,
-            genre: this.addCardForm.content, 
+            content: this.addCardForm.content, 
           };
-          this.addGame(payload);
+
+          this.addCard(payload);
           this.initForm();
         },
 

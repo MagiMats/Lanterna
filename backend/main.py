@@ -124,11 +124,12 @@ class CardInteractor():
         self.database = card_database
 
     def create_card(self, title, content):
-        self.card_parser.validate_title()
-        
-        card = Card(title, content)
+        self.parser.validate_title(title)
 
-        self.card_storage.store_card(card)
+        card = Card(title, content)
+        self.parser.parse_card(card)
+
+        self.database.store_card(card)
 
         return card
 
@@ -137,7 +138,7 @@ class CardInteractor():
 
     def update_card(self, card_id: uuid4, new_card: Card):
         new_card_title = new_card.get_title()
-        self.card_parser.validate_title(new_card_title)
+        self.parser.validate_title(new_card_title)
 
         self.database.update_card(card_id, new_card)
 
@@ -175,9 +176,9 @@ class WebInteractor(CardInteractor):
                     post_data.get('content'),
                 )
 
-            else:
-                all_cards = self.get_all_cards()
-                response_object['cards'] = all_cards
+            
+            all_cards = self.get_all_cards()
+            response_object['cards'] = all_cards
 
             return jsonify(response_object)
 
@@ -302,7 +303,7 @@ class SQLAlchemyDatabase(DatabaseInteractor):
         self.session.add(unwrapped_parsed_card)
 
         #only adds the card temporarily till we commit
-        self.session.flush()
+        self.session.commit()
 
     #Parse python dictionaries to a json format
     def jsonify_parsed_content(self, parsed_card_content):
