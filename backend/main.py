@@ -2,6 +2,7 @@ from uuid import uuid4
 from abc import ABC,abstractmethod
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import database as sql_database
 
 from sqlalchemy import (
     Column,
@@ -133,7 +134,7 @@ class CardInteractor():
 
         return card
 
-    def delete_card(self, card_id: uuid4):
+    def delete_card(self, card_id):
         self.database.remove_card(card_id)
 
     def update_card(self, card_id: uuid4, new_card: Card):
@@ -162,12 +163,27 @@ class WebInteractor(CardInteractor):
     def init_router(self):
         self.app = Flask(__name__)
         app = self.app
-        CORS(app, resources={r"/*":{'origins':"*"}})
+        CORS(app)
 
         @app.route('/cards', methods=["GET", "POST"])
         def cards():
             response_object = {'status': 'succes'}
 
+            response_object = post_follow_up(response_object)
+
+            return jsonify(response_object)
+
+        @app.route('/cards/<card_id>/delete', methods=["DELETE"])
+        def delete_card(card_id):
+            response_object = {'status': 'succes'}
+
+            if request.method == "DELETE":
+                response_object = {'message': 'Card got deleted =['}
+                self.delete_card(card_id)
+
+            return jsonify(response_object)
+
+        def post_follow_up(response_object):
             if request.method == 'POST':
                 post_data = request.get_json()
 
@@ -180,10 +196,9 @@ class WebInteractor(CardInteractor):
             all_cards = self.get_all_cards()
             response_object['cards'] = all_cards
 
-            return jsonify(response_object)
+            return response_object
 
         app.run(debug=True)
-        print('error')
 
 class ReCardParser(CardParserInteractor):
     def validate_title(self, title):
@@ -244,98 +259,39 @@ class AlgorithmCalculator(RevCalcInteractor):
         pass
 
 class SQLAlchemyDatabase(DatabaseInteractor):
-    def __init__(self):
-        self.base = declarative_base()
-        self.engine = create_engine('sqlite:////tmp/cards.db')
-        self.session = scoped_session(sessionmaker(autocommit=False,
-            autoflush=False,
-            bind=self.engine))
-
-    class DataCard(declarative_base()):
-        __tablename__ = 'card'
-
-        card_id     = Column(Integer, primary_key = True)
-        title       = Column(String)
-        content     = Column(String)
-
-        links       = Column(String)
-        questions   = Column(String)
-        latex       = Column(String)
-        tags        = Column(String)
-
     def update_database(self):
-        self.session.commit()
+        sql_database.update_database()
 
     def get_all_cards(self):
-        cards = self.session.query(self.DataCard).all()
-        cards = self.serialize_cards(cards)
-
-        return cards
+        return sql_database.get_all_cards()
 
     def serialize_cards(self, cards):
-        serialized_cards = {}
-        serialized_card = {}
-
-        for card in cards:
-            serialized_card['title']        = card.title
-            serialized_card['content']      = card.content
-            serialized_card['links']        = card.links
-            serialized_card['questions']    = card.questions
-            serialized_card['latex']        = card.latex
-            serialized_card['tags']         = card.tags
-
-            serialized_cards[card.card_id] = serialized_card
-
-        return serialized_cards
+        return sql_database.serialize_cards(cards)
 
     def get_card(self, card_id):
-        card = self.session.query(self.DataCard).get(card_id)
-
-        return card
+        return sql_database.get_card(card_id)
 
     def store_card(self, card):
-        parsed_card_content = card.get_parsed_content()
-
-        parsed_card_content = self.jsonify_parsed_content(parsed_card_content)
-    
-        unwrapped_parsed_card = self.unwrap_parsed_card(card, parsed_card_content)
-
-        self.session.add(unwrapped_parsed_card)
-
-        #only adds the card temporarily till we commit
-        self.session.commit()
+        sql_database.store_card(card)
 
     #Parse python dictionaries to a json format
     def jsonify_parsed_content(self, parsed_card_content):
-        for item in parsed_card_content:
-            parsed_card_content[item] = json.dumps(parsed_card_content[item])
-
-        return parsed_card_content
+        return sql_database.jsonify_parsed_content(parsed_card_content)
 
     def unwrap_parsed_card(self,card, parsed_card_content):
-
-        unwrapped_card = self.DataCard(
-            title       = card.get_title(),
-            content     = card.get_content(),
-            links       = parsed_card_content['links'], 
-            questions   = parsed_card_content['questions'], 
-            latex       = parsed_card_content['latex'], 
-            tags        = parsed_card_content['tags'], 
-        )
-
-        return unwrapped_card
+        return sql_database.unwrap_parsed_card(card, parsed_card_content)
 
     def update_card(self, card_id, new_card):
         pass
 
     def remove_card(self, card_id):
-        self.session.query(self.DataCard).get(card_id).delete()
+        sql_database.remove_card(card_id)
     
     def init_db(self):
-        self.base.metadata.create_all(bind=self.engine)
+        pass
 
     def reset_database(self):
-        self.base.metadata.drop_all(self.engine)
+        sql_database.reset_database()
 
 if __name__=='__main__':
 
@@ -343,7 +299,6 @@ if __name__=='__main__':
     card_rev_calc   = AlgorithmCalculator()
     card_database   = SQLAlchemyDatabase()
     
-    card_database.init_db()
     interactor = WebInteractor(card_parser, card_rev_calc, card_database)
 
     interactor.init_router()

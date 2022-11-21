@@ -2,11 +2,13 @@
 <div class="jumbotron vertical-center">
   <div class="container">
     
-       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/sketchy/bootstrap.min.css" integrity="sha384-RxqHG2ilm4r6aFRpGmBbGTjsqwfqHOKy1ArsMhHusnRO47jcGqpIQqlQK/kmGy9R" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/lux/bootstrap.min.css" integrity="sha384-9+PGKSqjRdkeAU7Eu4nkJU8RFaH8ace8HGXnkiKMP9I9Te0GJ4/km3L1Z8tXigpG" crossorigin="anonymous">
     <div class="row">
       <div class="col-sm-12 ">
        <h1>Card List</h1>
         <hr><br>
+
+       <b-alert variant="success" v-if="showMessage" show> {{ message }} </b-alert>
 
         <button type="button" class="btn btn-success btn-sm" v-b-modal.card-modal>Add Card</button>
         <table>
@@ -14,12 +16,15 @@
             <tr>
               <th><h3>Title</h3></th>
               <th><h3>Content</h3></th>
+              <th><h3>card id</h3></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(card, index) in cards" :key="index">
               <td>{{card.title}}</td>
               <td>{{card.content}}</td>
+              <td>{{card.card_id}}</td>
+              <button type="button" class="btn btn-danger btn-sm" @click="deleteCard(card)">Delete</button>
             </tr>
           </tbody>
         </table>
@@ -89,8 +94,8 @@
             });
         },
 
-        addGame(payload) {
-          const path = 'http://localhost:5000/cards';
+        addCard(payload) {
+          const path = 'http://127.0.0.1:5000/cards';
           axios.post(path, payload)
             .then(() => {
               this.getCards();
@@ -130,6 +135,24 @@
           e.preventDefault();
           this.$refs.addCardModal.hide();
           this.initForm();
+        },
+
+        removeCard(cardID) {
+          const path = `http://localhost:5000/cards/${cardID}/delete`;
+          axios.delete(path)
+            .then(() => {
+              this.getCards();
+              this.message = 'Game Removed 🗑️!';
+              this.showMessage = true;
+            })
+            .catch((error) => {
+              // eslint-disable-next-line
+              console.error(error);
+              this.getCards();
+            });
+        },
+        deleteCard(card) {
+          this.removeCard(card.card_id);
         },
 
       },
