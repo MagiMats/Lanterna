@@ -1,21 +1,20 @@
-import pymongo
+
+# Software structure imports
 from abc import ABC,abstractmethod
+
+# Flask Imports
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import database as sql_database
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    ForeignKey,
-    Table
-)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
+#
+import pymongo
 
+# General Imports
 import re, json
+
+
+
+
 
 class Card():
     def __init__(self, title, content):
@@ -41,11 +40,9 @@ class Card():
     def set_parsed_content(self, parsed_content):
         self._parsed_content = parsed_content
 
-    def set_id(self):
-        self._id = uuid4().hex
 
-    def get_id(self):
-        return self._id
+
+
 
 class CardParserInteractor(ABC):
     @abstractmethod
@@ -88,10 +85,84 @@ class CardParserInteractor(ABC):
     def _parse_tags():
         pass
 
+
+
+
+
+class ReCardParser(CardParserInteractor):
+    def validate_title(self, title):
+        title_pat = re.compile('[a-zA-Z1-9\-\_]*')
+        
+        if re.match(title_pat, title)[0] == title:
+            return True
+        else:
+            raise ValueError 
+
+    def _parse_links(self, content):
+        # Matches a title surrounded by 2 hooks
+        link_pat = re.compile('\[\[[a-zA-Z1-9\-\_]*\]\]')
+        links = re.findall(link_pat, content)
+
+        links = self.strip_chars(links, 2, 2)
+
+        return links
+
+    def strip_chars(self, strip_list, begin, end=0):
+        for index, item in enumerate(strip_list):
+            if end == 0:
+                strip_item = item[begin:]
+            else:
+                strip_item = item[begin: -end]
+            
+            strip_list[index] = strip_item
+
+        return strip_list
+
+    def _parse_question(self, content):
+        q_pat = re.compile('Q\d*\{\{.*\}\}')
+
+        questions = re.findall(q_pat, content)
+
+        #TODO Make it so we can parse more than 9 questions
+        questions = self.strip_chars(questions, 4,2)
+        return questions
+
+    def _parse_latex(self, content):
+        latex_pat = re.compile('\$.*\$')
+        latex = re.findall(latex_pat, content)
+
+        latex = self.strip_chars(latex, 1, 1)
+        return latex
+
+    def _parse_tags(self, content):
+        tag_pat = re.compile('#\w+')
+
+        tags = re.findall(tag_pat, content)
+
+        tags = self.strip_chars(tags, 1)
+
+        return tags
+
+
+
+
+
 class RevCalcInteractor(ABC):
     @abstractmethod
     def calculate_next_review():
         pass
+
+
+
+
+
+class AlgorithmCalculator(RevCalcInteractor):
+    def calculate_next_review():
+        pass
+
+
+
+
 
 class DatabaseInteractor(ABC):
     @abstractmethod
@@ -99,7 +170,7 @@ class DatabaseInteractor(ABC):
         return NotImplementedError
 
     @abstractmethod
-    def get_card(self, card_id: uuid4):
+    def get_card(self, card_id):
         return NotImplementedError
 
     @abstractmethod
@@ -107,12 +178,61 @@ class DatabaseInteractor(ABC):
         return NotImplementedError
 
     @abstractmethod
-    def update_card(self, card_id:uuid4, new_card: Card):
+    def update_card(self, card_id, new_card: Card):
         return NotImplementedError
 
     @abstractmethod
-    def remove_card(self, card_id: uuid4):
+    def remove_card(self, card_id):
         return NotImplementedError
+
+
+
+
+
+class MongoDBDatabase(DatabaseInteractor):
+    def __init__(self):
+        self.dbname = self.get_database()
+
+        self.collection_name = self.dbname["mats_cards"]
+
+    def get_database(self):
+        client = pymongo.MongoClient("mongodb+srv://Mats:<password>@cluster0.vzinlcn.mongodb.net/?retryWrites=true&w=majority")
+        
+        return client['card_list']
+
+    def get_all_cards(self):
+        pass
+
+    def get_card(self, card_id):
+        pass
+    
+    def store_card(self, card):
+        card_dict = self.serialize_card_to_dict(card)
+
+        self.collection_name.insert_one(card_dict)
+
+    def update_card(self, card_id, new_card):
+        pass
+
+    def remove_card(self, card_id):
+        pass
+
+    def serialize_card_to_dict(self, card):
+        card_dict = {}
+        card_parsed_content = card.get_parsed_content()
+
+        card_dict['title']       = card.get_title()
+        card_dict['content']     = card.get_content()
+        card_dict['links']       = card_parsed_content['links']
+        card_dict['questions']   = card_parsed_content['questions']
+        card_dict['latex']       = card_parsed_content['latex']
+        card_dict['tags']        = card_parsed_content['tags']
+
+        return card_dict
+
+
+
+
 
 class CardInteractor():
     def __init__(
@@ -160,6 +280,10 @@ class CardInteractor():
         cards = self.database.get_all_cards()
         # TODO We need to pass the id and 
         # TODO the properties for calculating but nothing else
+
+
+
+
 
 class WebInteractor(CardInteractor):
     def init_router(self):
@@ -216,77 +340,16 @@ class WebInteractor(CardInteractor):
 
         app.run(debug=True)
 
-class ReCardParser(CardParserInteractor):
-    def validate_title(self, title):
-        title_pat = re.compile('[a-zA-Z1-9\-\_]*')
-        
-        if re.match(title_pat, title)[0] == title:
-            return True
-        else:
-            raise ValueError 
 
-    def _parse_links(self, content):
-        # Matches a title surrounded by 2 hooks
-        link_pat = re.compile('\[\[[a-zA-Z1-9\-\_]*\]\]')
-        links = re.findall(link_pat, content)
-
-        links = self.strip_chars(links, 2, 2)
-
-        return links
-
-    def strip_chars(self, strip_list, begin, end=0):
-        for index, item in enumerate(strip_list):
-            if end == 0:
-                strip_item = item[begin:]
-            else:
-                strip_item = item[begin: -end]
-            
-            strip_list[index] = strip_item
-
-        return strip_list
-
-    def _parse_question(self, content):
-        q_pat = re.compile('Q\d*\{\{.*\}\}')
-
-        questions = re.findall(q_pat, content)
-
-        #TODO Make it so we can parse more than 9 questions
-        questions = self.strip_chars(questions, 4,2)
-        return questions
-
-    def _parse_latex(self, content):
-        latex_pat = re.compile('\$.*\$')
-        latex = re.findall(latex_pat, content)
-
-        latex = self.strip_chars(latex, 1, 1)
-        return latex
-
-    def _parse_tags(self, content):
-        tag_pat = re.compile('#\w+')
-
-        tags = re.findall(tag_pat, content)
-
-        tags = self.strip_chars(tags, 1)
-
-        return tags
-
-class AlgorithmCalculator(RevCalcInteractor):
-    def calculate_next_review():
-        pass
-
-class MongoDBDatabase(DatabaseInteractor):
-
-    client = pymongo.MongoClient("mongodb+srv://Mats:<password>@cluster0.vzinlcn.mongodb.net/?retryWrites=true&w=majority")
-    
-    return client['card_list']
 
 
 if __name__=='__main__':
 
     card_parser     = ReCardParser()  
     card_rev_calc   = AlgorithmCalculator()
-    card_database   = SQLAlchemyDatabase()
+    card_database   = MongoDBDatabase()
     
+
     interactor = WebInteractor(card_parser, card_rev_calc, card_database)
 
     interactor.init_router()

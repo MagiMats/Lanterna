@@ -7,7 +7,7 @@ name = "pypi"
 flask = "*"
 sqlalchemy = "*"
 flask-cors = "*"
-pymongo = "*"
+pymongo = {extras = ["srv"], version = "*"}
 
 [dev-packages]
 
