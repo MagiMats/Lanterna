@@ -274,41 +274,6 @@ class AlgorithmCalculator(RevCalcInteractor):
     def calculate_next_review():
         pass
 
-class SQLAlchemyDatabase(DatabaseInteractor):
-    def update_database(self):
-        sql_database.update_database()
-
-    def get_all_cards(self):
-        return sql_database.get_all_cards()
-
-    def serialize_cards(self, cards):
-        return sql_database.serialize_cards(cards)
-
-    def get_card(self, card_id):
-        return sql_database.get_card(card_id)
-
-    def store_card(self, card):
-        sql_database.store_card(card)
-
-    #Parse python dictionaries to a json format
-    def jsonify_parsed_content(self, parsed_card_content):
-        return sql_database.jsonify_parsed_content(parsed_card_content)
-
-    def unwrap_parsed_card(self,card, parsed_card_content):
-        return sql_database.unwrap_parsed_card(card, parsed_card_content)
-
-    def update_card(self, card_id, new_card):
-        sql_database.update_card(card_id, new_card)
-
-    def remove_card(self, card_id):
-        sql_database.remove_card(card_id)
-    
-    def init_db(self):
-        pass
-
-    def reset_database(self):
-        sql_database.reset_database()
-
 class MongoDBDatabase(DatabaseInteractor):
 
     client = pymongo.MongoClient("mongodb+srv://Mats:<password>@cluster0.vzinlcn.mongodb.net/?retryWrites=true&w=majority")
