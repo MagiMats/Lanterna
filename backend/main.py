@@ -1,4 +1,4 @@
-from uuid import uuid4
+import pymongo
 from abc import ABC,abstractmethod
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -130,6 +130,11 @@ class CardInteractor():
         card = Card(title, content)
         self.parser.parse_card(card)
 
+        return card
+
+    def create_and_store_card(self, title, content):
+        card = self.create_card(title, content)
+
         self.database.store_card(card)
 
         return card
@@ -137,10 +142,7 @@ class CardInteractor():
     def delete_card(self, card_id):
         self.database.remove_card(card_id)
 
-    def update_card(self, card_id: uuid4, new_card: Card):
-        new_card_title = new_card.get_title()
-        self.parser.validate_title(new_card_title)
-
+    def update_card(self, card_id, new_card):
         self.database.update_card(card_id, new_card)
 
     def create_web_interface(self, web_interface):
@@ -183,11 +185,25 @@ class WebInteractor(CardInteractor):
 
             return jsonify(response_object)
 
+        @app.route('/cards/<card_id>/update', methods=["PUT"])
+        def update_card(card_id):
+            response_object = {'status': 'succes'}
+            if request.method == "PUT":
+                post_data = request.get_json()
+
+                card = self.create_card(post_data.get('title'), post_data.get('content'))
+
+                self.update_card(card_id, card)
+
+                response_object['message'] =  'Game Updated!'
+
+            return jsonify(response_object)
+
         def post_follow_up(response_object):
             if request.method == 'POST':
                 post_data = request.get_json()
 
-                self.create_card(
+                self.create_and_store_card(
                     post_data.get('title'),
                     post_data.get('content'),
                 )
@@ -282,7 +298,7 @@ class SQLAlchemyDatabase(DatabaseInteractor):
         return sql_database.unwrap_parsed_card(card, parsed_card_content)
 
     def update_card(self, card_id, new_card):
-        pass
+        sql_database.update_card(card_id, new_card)
 
     def remove_card(self, card_id):
         sql_database.remove_card(card_id)
@@ -292,6 +308,13 @@ class SQLAlchemyDatabase(DatabaseInteractor):
 
     def reset_database(self):
         sql_database.reset_database()
+
+class MongoDBDatabase(DatabaseInteractor):
+
+    client = pymongo.MongoClient("mongodb+srv://Mats:<password>@cluster0.vzinlcn.mongodb.net/?retryWrites=true&w=majority")
+    
+    return client['card_list']
+
 
 if __name__=='__main__':
 

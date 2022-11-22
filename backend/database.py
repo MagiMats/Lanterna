@@ -54,20 +54,25 @@ def serialize_cards(data_cards):
     return serialized_cards
 
 def get_card(card_id):
-    card = session.query(DataCard).get(card_id)
+    card = session.query(DataCard).filter(DataCard.card_id == card_id)
 
     return card
 
 def store_card( card):
-    parsed_card_content = card.get_parsed_content()
-
-    parsed_card_content = jsonify_parsed_content(parsed_card_content)
-
-    unwrapped_parsed_card = unwrap_parsed_card(card, parsed_card_content)
+    unwrapped_parsed_card = data_card_to_json(card)
 
     session.add(unwrapped_parsed_card)
     #only adds the card temporarily till we commit
     session.commit()
+
+def data_card_to_json(card):
+    parsed_card_content = card.get_parsed_content()
+
+    parsed_card_content = jsonify_parsed_content(parsed_card_content)
+
+    unwrapped_parsed_card = unwrap_parsed_card_create_datacard(card, parsed_card_content)
+
+    return unwrapped_parsed_card
 
 #Parse python dictionaries to a json format
 def jsonify_parsed_content(parsed_card_content):
@@ -76,10 +81,10 @@ def jsonify_parsed_content(parsed_card_content):
 
     return parsed_card_content
 
-def unwrap_parsed_card(card, parsed_card_content):
+def unwrap_parsed_card_create_datacard(card, parsed_card_content):
 
     unwrapped_card = DataCard(
-        title       = card.get_title(),
+        title       = card.get_title(), 
         content     = card.get_content(),
         links       = parsed_card_content['links'], 
         questions   = parsed_card_content['questions'], 
@@ -89,8 +94,11 @@ def unwrap_parsed_card(card, parsed_card_content):
 
     return unwrapped_card
 
-def update_card( card_id, new_card):
-    pass
+def update_card(card_id, new_card):
+    remove_card(card_id)
+
+    store_card(new_card)
+    session.commit()
 
 def remove_card(card_id):
     session.query(DataCard).filter(DataCard.card_id == card_id).delete()
