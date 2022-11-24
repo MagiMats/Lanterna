@@ -1,41 +1,45 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    ForeignKey,
-    Table
-)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-
-Base = declarative_base()
-engine = create_engine('sqlite:////tmp/cards.db')
-db_session = scoped_session(sessionmaker(autocommit=False,
-    autoflush=False,
-    bind=engine))
-
-Base.query = db_session.query_property()
+import pymongo
 
 
-class DataCard(Base):
-        __tablename__ = 'card'
+class MongoDBDatabase(DatabaseInteractor):
+    def __init__(self):
+        self.dbname = self.get_database()
 
-        card_id     = Column(Integer, primary_key = True)
-        title       = Column(String)
-        content     = Column(String)
+        self.collection_name = self.dbname["mats_cards"]
 
-        links       = Column(String)
-        questions   = Column(String)
-        latex       = Column(String)
-        tags        = Column(String)
+    def get_database(self):
+        client = pymongo.MongoClient("mongodb+srv://Mats:107MaTesla2003@cluster0.vzinlcn.mongodb.net/?retryWrites=true&w=majority")
+        
+        return client['card_list']
 
-Base.metadata.create_all(bind=engine)
+    def get_all_cards(self):
+        pass
 
-card = DataCard(title = 'bing', content='chilling',links = 'heasu', questions =' qusnaeuh', latex='latehaus', tags = 'ahutnse')
-db_session.add(card)
+    def get_card(self, card_id):
+        pass
+    
+    def store_card(self, card):
+        card_dict = self.serialize_card_to_dict(card)
 
-db_session.commit()
+        self.collection_name.insert_one(card_dict)
+
+    def update_card(self, card_id, new_card):
+        pass
+
+    def remove_card(self, card_id):
+        pass
+
+    def serialize_card_to_dict(self, card):
+        card_dict = {}
+        card_parsed_content = card.get_parsed_content()
+
+        card_dict['title']       = card.get_title()
+        card_dict['content']     = card.get_content()
+        card_dict['links']       = card_parsed_content['links']
+        card_dict['questions']   = card_parsed_content['questions']
+        card_dict['latex']       = card_parsed_content['latex']
+        card_dict['tags']        = card_parsed_content['tags']
+
+        return card_dict
 
 
-print(card.card_id)

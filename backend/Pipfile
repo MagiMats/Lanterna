@@ -4,10 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
 sqlalchemy = "*"
 flask-cors = "*"
 pymongo = {extras = ["srv"], version = "*"}
+flask = "*"
+flask-sqlalchemy = "*"
 
 [dev-packages]
 

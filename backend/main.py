@@ -5,9 +5,10 @@ from abc import ABC,abstractmethod
 # Flask Imports
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
 
-#
-import pymongo
+# Import for pymongo
+# import pymongo
 
 # General Imports
 import re, json
@@ -20,7 +21,6 @@ class Card():
     def __init__(self, title, content):
         self.set_title(title)
         self.set_content(content)
-        self.set_id()
 
     def set_title(self,title):
         self._title = title
@@ -188,7 +188,7 @@ class DatabaseInteractor(ABC):
 
 
 
-
+'''
 class MongoDBDatabase(DatabaseInteractor):
     def __init__(self):
         self.dbname = self.get_database()
@@ -229,7 +229,46 @@ class MongoDBDatabase(DatabaseInteractor):
         card_dict['tags']        = card_parsed_content['tags']
 
         return card_dict
+'''
 
+
+
+
+class FlaskSQLDatabase(DatabaseInteractor):
+    def init_database(self, app):
+        app.config ["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///cards.sqlite3'
+        db = SQLAlchemy(app)
+
+        class cards(db.Model):
+            card_id     = db.Column('card_id', db.Integer, primary_key = True)
+            content     = db.Column(db.String)
+            title       = db.Column(db.String)
+            links       = db.Column(db.String)
+            questions   = db.Column(db.String)
+            latex       = db.Column(db.String)
+            tags        = db.Column(db.String)
+
+        def __init__(self, title, content):
+            self.title = title
+            self.content = content
+
+        db.create_all()
+
+    
+    def get_all_cards(self):
+        pass
+
+    def get_card(self, card_id):
+        pass
+
+    def store_card(self, card: Card):
+        pass
+
+    def update_card(self, card_id, new_card: Card):
+        pass
+
+    def remove_card(self, card_id):
+        pass
 
 
 
@@ -286,11 +325,15 @@ class CardInteractor():
 
 
 class WebInteractor(CardInteractor):
-    def init_router(self):
+    def create_web_interactor(self):
         self.app = Flask(__name__)
         app = self.app
         CORS(app)
 
+        self.init_router(app)
+        self.init_database(app)
+
+    def init_router(self, app):
         @app.route('/cards', methods=["GET", "POST"])
         def cards():
             response_object = {'status': 'succes'}
@@ -340,6 +383,8 @@ class WebInteractor(CardInteractor):
 
         app.run(debug=True)
 
+    def init_database(self, app):
+        self.database.init_database(app)
 
 
 
@@ -347,9 +392,12 @@ if __name__=='__main__':
 
     card_parser     = ReCardParser()  
     card_rev_calc   = AlgorithmCalculator()
-    card_database   = MongoDBDatabase()
+    card_database   = FlaskSQLDatabase()
     
 
     interactor = WebInteractor(card_parser, card_rev_calc, card_database)
 
+
+    interactor.create_web_interactor()
     interactor.init_router()
+    interactor.init_database()
