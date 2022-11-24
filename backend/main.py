@@ -238,6 +238,7 @@ class FlaskSQLDatabase(DatabaseInteractor):
     def init_database(self, app):
         app.config ["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///cards.sqlite3'
         db = SQLAlchemy(app)
+        self.db = db
 
         class cards(db.Model):
             card_id     = db.Column('card_id', db.Integer, primary_key = True)
@@ -247,22 +248,30 @@ class FlaskSQLDatabase(DatabaseInteractor):
             questions   = db.Column(db.String)
             latex       = db.Column(db.String)
             tags        = db.Column(db.String)
-
-        def __init__(self, title, content):
-            self.title = title
-            self.content = content
-
+            
+        self.cards = cards
         db.create_all()
 
     
     def get_all_cards(self):
-        pass
+        db = self.db
+        cards = self.cards
+
+        return cards.query.all()
 
     def get_card(self, card_id):
         pass
 
     def store_card(self, card: Card):
-        pass
+        db = self.db
+
+        parsed_card_content = card.get_parsed_content()
+
+        parsed_card_content = self.jsonify_parsed_content(parsed_card_content)
+
+        new_card = self.unwrap_parsed_card_create_datacard(card, parsed_card_content)
+
+        db.session.add(new_card)
 
     def update_card(self, card_id, new_card: Card):
         pass
@@ -270,7 +279,25 @@ class FlaskSQLDatabase(DatabaseInteractor):
     def remove_card(self, card_id):
         pass
 
+    def jsonify_parsed_content(self, parsed_card_content):
+        for item in parsed_card_content:
+            parsed_card_content[item] = json.dumps(parsed_card_content[item])
 
+        return parsed_card_content
+
+    def unwrap_parsed_card_create_datacard(self, card, parsed_card_content):
+        cards = self.cards
+
+        unwrapped_card = cards(
+            title       = card.get_title(), 
+            content     = card.get_content(),
+            links       = parsed_card_content['links'], 
+            questions   = parsed_card_content['questions'], 
+            latex       = parsed_card_content['latex'], 
+            tags        = parsed_card_content['tags'], 
+        )
+
+        return unwrapped_card
 
 
 class CardInteractor():
@@ -325,15 +352,15 @@ class CardInteractor():
 
 
 class WebInteractor(CardInteractor):
-    def create_web_interactor(self):
-        self.app = Flask(__name__)
+    app = Flask(__name__)
+    CORS(app)
+
+    def init_router(self):
         app = self.app
-        CORS(app)
 
-        self.init_router(app)
-        self.init_database(app)
+        with app.app_context():
+            self.init_database()
 
-    def init_router(self, app):
         @app.route('/cards', methods=["GET", "POST"])
         def cards():
             response_object = {'status': 'succes'}
@@ -383,7 +410,8 @@ class WebInteractor(CardInteractor):
 
         app.run(debug=True)
 
-    def init_database(self, app):
+    def init_database(self):
+        app = self.app
         self.database.init_database(app)
 
 
@@ -397,7 +425,4 @@ if __name__=='__main__':
 
     interactor = WebInteractor(card_parser, card_rev_calc, card_database)
 
-
-    interactor.create_web_interactor()
     interactor.init_router()
-    interactor.init_database()
